@@ -7,13 +7,20 @@ const port = process.env.PORT || 9000
 const app = express()
 const cookieParser = require('cookie-parser')
 const corsOptions = {
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
   credentials: true,
   optionalSuccessStatus: 200,
 }
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use(cookieParser())
+
+
+
+// DB_USER=spharejobs
+// DB_PASS=MFfiRo7BTyvovKTM
+// SECRET_KEY=2791419b8ee6225631de9479dc980de11ad603636af3c80a9f3059883bd32830992264db08fd4a968afe6831490b1e5a29bfe138aee2467cfbb158235bd84ecc
+
 
 // const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@main.yolij.mongodb.net/?retryWrites=true&w=majority&appName=Main`
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nprls.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
