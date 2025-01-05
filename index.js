@@ -52,6 +52,7 @@ async function run() {
     const db = client.db('solo-db')
     const jobsCollection = db.collection('jobs')
     const bidsCollection = db.collection('bids')
+    const usersCollection = db.collection('users')
 
     // generate jwt
     app.post('/jwt', async (req, res) => {
@@ -79,6 +80,39 @@ async function run() {
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         })
         .send({ success: true })
+    })
+
+
+    // users related API's
+
+    app.get('/users', verifyToken, async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      res.send(result);
+    })
+
+    app.patch('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updatedDoc)
+      res.send(result)
+    })
+
+    app.delete('/users/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
     })
 
     // save a jobData in db
