@@ -35,13 +35,13 @@ const client = new MongoClient(uri, {
 })
 // verifyToken
 const verifyToken = (req, res, next) => {
-  const token = req.cookies?.token
-  if (!token) return res.status(401).send({ message: 'unauthorized access' })
+  const token = req.cookies?.token;
+  if (!token) return res.status(401).send({ message: 'unauthorized access' });
   jwt.verify(token, process.env.SECRET_KEY, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: 'unauthorized access' })
+      return res.status(401).send({ message: 'unauthorized access' });
     }
-    req.user = decoded
+    req.user = decoded;
   })
 
   next()
@@ -88,6 +88,21 @@ async function run() {
     app.get('/users', verifyToken, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
+    })
+
+    app.get('/user/admin/:email', verifyToken, async(req, res) => {
+      const email = req.params?.email;
+      console.log(req.params?.email)
+      if(email !== req.user?.email) {
+        return res.status(403).send({message: 'unauthorised access'})
+      }
+      const query = {email: email}
+      const user = await usersCollection.findOne(query)
+      let admin = false;
+      if(user){
+        admin = user?.role === "admin"
+      }
+      res.send({admin})
     })
 
     app.post('/users', async (req, res) => {
