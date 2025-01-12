@@ -7,7 +7,7 @@ const port = process.env.PORT || 9000
 const app = express()
 const cookieParser = require('cookie-parser')
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'https://micro-jobs-37b8c.web.app', 'https://micro-jobs-37b8c.firebaseapp.com'],
   credentials: true,
   optionalSuccessStatus: 200,
 }
@@ -90,19 +90,19 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/user/admin/:email', verifyToken, async(req, res) => {
+    app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params?.email;
       console.log(req.params?.email)
-      if(email !== req.user?.email) {
-        return res.status(403).send({message: 'unauthorised access'})
+      if (email !== req.user?.email) {
+        return res.status(403).send({ message: 'unauthorised access' })
       }
-      const query = {email: email}
+      const query = { email: email }
       const user = await usersCollection.findOne(query)
       let admin = false;
-      if(user){
+      if (user) {
         admin = user?.role === "admin"
       }
-      res.send({admin})
+      res.send({ admin })
     })
 
     app.post('/users', async (req, res) => {
@@ -246,6 +246,19 @@ async function run() {
       res.send(result)
     })
 
+    // Get Project Price
+    app.get('/price', async (req, res) => {
+      const { email } = req.query;
+      const result = await bidsCollection.aggregate([
+        { $match: { status: 'Completed', email} },  // Filter for completed bids and specific email
+        { $group: { _id: '$email', totalPrice: { $sum: '$price' } } } // Sum the prices
+      ]).toArray();
+
+      res.send(result)
+    })
+
+
+
     // get all jobs
     app.get('/all-jobs', async (req, res) => {
       const filter = req.query.filter
@@ -265,7 +278,7 @@ async function run() {
     })
 
     // Send a ping to confirm a successful connection
-    await client.db('admin').command({ ping: 1 })
+    // await client.db('admin').command({ ping: 1 })
     // console.log(
     //   'Pinged your deployment. You successfully connected to MongoDB!'
     // )
