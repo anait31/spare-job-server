@@ -16,13 +16,6 @@ app.use(express.json())
 app.use(cookieParser())
 
 
-
-// DB_USER=spharejobs
-// DB_PASS=MFfiRo7BTyvovKTM
-// SECRET_KEY=2791419b8ee6225631de9479dc980de11ad603636af3c80a9f3059883bd32830992264db08fd4a968afe6831490b1e5a29bfe138aee2467cfbb158235bd84ecc
-
-
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@main.yolij.mongodb.net/?retryWrites=true&w=majority&appName=Main`
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nprls.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -42,9 +35,9 @@ const verifyToken = (req, res, next) => {
       return res.status(401).send({ message: 'unauthorized access' });
     }
     req.user = decoded;
+    next()
   })
 
-  next()
 }
 
 async function run() {
@@ -55,13 +48,11 @@ async function run() {
     const usersCollection = db.collection('users')
 
     // generate jwt
-    app.post('/jwt', async (req, res) => {
+    app.post('/jwt', async(req, res) => {
       const email = req.body
-      // create token
       const token = jwt.sign(email, process.env.SECRET_KEY, {
         expiresIn: '365d',
       })
-      // console.log(token)
       res
         .cookie('token', token, {
           httpOnly: true,
@@ -92,7 +83,6 @@ async function run() {
 
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params?.email;
-      console.log(req.params?.email)
       if (email !== req.user?.email) {
         return res.status(403).send({ message: 'unauthorised access' })
       }
@@ -148,8 +138,6 @@ async function run() {
     app.get('/jobs/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       const decodedEmail = req.user?.email
-      // console.log('email from token-->', decodedEmail)
-      // console.log('email from params-->', email)
       if (decodedEmail !== email)
         return res.status(401).send({ message: 'unauthorized access' })
       const query = { 'buyer.email': email }
@@ -176,7 +164,8 @@ async function run() {
     // save a jobData in db
     app.put('/update-job/:id', async (req, res) => {
       const id = req.params.id
-      const jobData = req.body
+      const jobData = req.body;
+      console.log(jobData)
       const updated = {
         $set: jobData,
       }
@@ -197,7 +186,7 @@ async function run() {
       if (alreadyExist)
         return res
           .status(400)
-          .send('You have already placed a bid on this job!')
+          .send('You have already applied on this job!')
       // 1. Save data in bids collection
 
       const result = await bidsCollection.insertOne(bidData)
@@ -217,8 +206,6 @@ async function run() {
       const isBuyer = req.query.buyer
       const email = req.params.email
       const decodedEmail = req.user?.email
-      // console.log('email from token-->', decodedEmail)
-      // console.log('email from params-->', email)
       if (decodedEmail !== email)
         return res.status(401).send({ message: 'unauthorized access' })
 
@@ -260,7 +247,7 @@ async function run() {
 
 
     // get all jobs
-    app.get('/all-jobs', async (req, res) => {
+    app.get('/all-jobs', verifyToken, async (req, res) => {
       const filter = req.query.filter
       const search = req.query.search
       const sort = req.query.sort
@@ -277,11 +264,6 @@ async function run() {
       res.send(result)
     })
 
-    // Send a ping to confirm a successful connection
-    // await client.db('admin').command({ ping: 1 })
-    // console.log(
-    //   'Pinged your deployment. You successfully connected to MongoDB!'
-    // )
   } finally {
     // Ensures that the client will close when you finish/error
   }
